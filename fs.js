@@ -2,7 +2,7 @@ const fs = require('fs');
 const size = require('image-size');
 
 // Change this to your desired pack directory
-const dir = './';
+const dir = '../shit';
 
 // Banner aspect ratio should be 2.56:1
 // Background aspect ratios can be 4:3, 16:9, 16:10, 5:4
@@ -48,45 +48,38 @@ function checkIfImage(string) {
   return false;
 };
 
-// throw new ParserException('This is a parser exception');
-// ...
-// catch(error) {
-//   switch(error.name) {
-//     case 'ParserException':
-//       console.log('There was an error parsing '+ `${error.fileName}`)
-//       console.log(error.message);
-//       return;
-//     case 'WriterException':
-//       console.log('There was an error editing ' + `${error.fileName}`)
-//       console.log(error.message);
-//       return;
-//   }
-// }
-
 try {
+  console.log('Script starting...');
   // get all files/folders within specified directory in an array
-  let itemsInDir = fs.readdirSync(dir);
+  let songFolderItems = fs.readdirSync(dir);
 
   let bannerUrl = null;
   let bgUrl = null;
-  let checked = false;
+  let fallbackCheck = false;
 
   const songFolders = [];
   const files = [];
   const images = [];
 
+  console.log('Iterating through main directory now');
   // populate songFolders array and files array
-  for (let i = 0; i < itemsInDir.length; i++) {
+  for (let i = 0; i < songFolderItems.length; i++) {
+    const path = dir + '/' + songFolderItems[i];
+    console.log(`Currently in: ${songFolderItems[i]}`);
+
     // if current file is a directory (a song folder), add to array
     // if it is not a directory, it is either an image or file within folder
-    if (itemsInDir[i].isDirectory()) {
-      songFolders.push(itemsInDir[i]);
+    if (fs.statSync(path).isDirectory()) {
+      console.log(`Adding ${songFolderItems[i]} to songFolders`)
+      songFolders.push(songFolderItems[i]);
     } else {
-      files.push(itemsInDir[i]);
+      console.log(`Adding ${songFolderItems[i]} to files`)
+      files.push(songFolderItems[i]);
     };
   };
 
   // look through the files for images, for fallback banner and bg
+  // also sort out all the extraneous files
   for (let i = 0; i < files.length; i++) {
     const fileName = files[i];
 
@@ -109,7 +102,8 @@ try {
         continue;
       };
     };
-    checked = true;
+
+    fallbackCheck = true;
   };
 
 } catch(error) {
