@@ -1,7 +1,8 @@
 const fs = require('fs');
 const size = require('image-size');
 
-// Change this to your desired pack directory
+// Change this to your desired pack directory with no / at the end
+// i.e. "C:/Games/Stepmania 5/Stamina RPG 6"
 const dir = '../shit';
 
 // Banner aspect ratio should be 2.56:1
@@ -53,8 +54,8 @@ try {
   // get all files/folders within specified directory in an array
   let songFolderItems = fs.readdirSync(dir);
 
-  let bannerUrl = null;
-  let bgUrl = null;
+  let fallbackBanner = null;
+  let fallbackBg = null;
   let fallbackCheck = false;
 
   const songFolders = [];
@@ -65,7 +66,7 @@ try {
   // populate songFolders array and files array
   for (let i = 0; i < songFolderItems.length; i++) {
     const path = dir + '/' + songFolderItems[i];
-    console.log(`Currently in: ${songFolderItems[i]}`);
+    console.log(`Currently on: ${songFolderItems[i]}`);
 
     // if current file is a directory (a song folder), add to array
     // if it is not a directory, it is either an image or file within folder
@@ -78,33 +79,40 @@ try {
     };
   };
 
+  console.log("Finished iterating through main directory");
   // look through the files for images, for fallback banner and bg
   // also sort out all the extraneous files
-  for (let i = 0; i < files.length; i++) {
-    const fileName = files[i];
-
+  for (let fileName of files) {
+    // if file is an image, check it's aspect ratio and set it to either banner or bg
     if (checkIfImage(fileName)) {
-      images.push(fileName);
+      const currDir = dir + '/' + fileName;
+      if (images.push(fileName)) console.log(`Adding ${fileName} to images`);
       // get the dimensions (requires npm install 'image-size' --save)
-      const {
-        height,
-        width,
-        type
-      } = size(dir + fileName); // output = { height: x, width: y, type: .ext }
+      const { width, height, type } = size(currDir); // output = { height: x, width: y, type: .ext }
 
       const aspectRatio = findAspectRatio(width, height);
       // if it's a banner aspect ratio, set banner variable i.e. './shitbanner.png'
-      if (aspectRatio === '64:25') {
-        bannerUrl = dir + fileName;
+      if (aspectRatio === '64:25' && !fallbackBanner) {
+        fallbackBanner = currDir;
+        console.log(`Set ${fallbackBanner} as fallback banner`);
+        console.log('Reason: Aspect ratio matched 2.56:1 / 64:25');
         continue;
-      } else {
-        bgUrl = dir + fileName;
-        continue;
-      };
-    };
+      }
 
-    fallbackCheck = true;
+      // catch edge cases where aspect ratio might not fit but has name designation
+      if (fileName.endsWith('bn')) fallbackBanner = currDir;
+      if (fileName.endsWith('bg')) fallbackBg = currDir;
+    };
   };
+
+  console.log("Successfully checked for fallback banner and background");
+  fallbackCheck = true;
+
+  // if the banner is found, remove it from images array
+  if (fallbackBanner) images = images.filter(image => image !== fallbackBanner);
+  
+  // if there is no fallback background yet and images array has something, set as fallback bg
+  if (!fallbackBg && images.length) fallbackBg = images[0];
 
 } catch(error) {
   switch(error.name) {
