@@ -197,11 +197,17 @@ try {
             }
 
             console.log(`Banner folder found: ${supposedBnDir}`);
+            const supposedBnFolder = fs.readdirSync(supposedBnDir + '/');
+            
+            // if the supposed directory is empty, throw error
+            if (!supposedBnFolder.length) {
+              throw new ParserException(`No suitable banners found in ${supposedBnDir}`, file);
+            };
+            
             // set and declare what the current .sm says the banner should be
             // check for existence
             // correct name if needed
-            const supposedBnContents = fs.readdirSync(supposedBnDir + '/');
-            if (supposedBnContents.includes(supposedBnName)) {
+            if (supposedBnFolder.includes(supposedBnName)) {
               console.log('Checking banner aspect ratio');
 
               const { width, height } = size(supposedBnDir + '/' + supposedBnName);
@@ -212,15 +218,29 @@ try {
             } else {
               console.log(`Banner not found! Searching for suitable replacement`);
 
+              // go through the location pointed to, and check for similarity between
+              // filenames
+              for (let banner of supposedBnFolder) {
+                if (compareChars(supposedBnName, banner) < 3) {
+                  if (readline.keyInYNStrict(`Do you want to use ${banner}?`)) {
+                    fileData[9] = `#BANNER:${banner};`;
+                    console.log(`Using ${banner} as banner for this file.`)
+                    break;
+                  } else {
+                    continue;
+                  }
+                }
+              }
             }
           }
 
           if (fileData[10] === '#BACKGROUND:;') {
             console.log('Inserting fallback Background');
             fileData[10] = `#BACKGROUND:../${fallbackBg}`;
+            console.log(`Fallback background ${fallbackBg} inserted`)
           } else {
             const existingBgUrl = fileData[10].slice(12, -1);
-            const supposedBnName = existingBgUrl.slice(3);
+            const supposedBgName = existingBgUrl.slice(3);
             let supposedBgDir;
 
             // check background url and trace based on how many subdirs it has
@@ -234,11 +254,13 @@ try {
               supposedBgDir = rootDir + '/' + bgParts;
             }
 
+            console.log(`Background folder found: ${supposedBgDir}`);
+            const supposedBgFolder = fs.readdirSync(supposedBgDir + '/');
+
             // set and declare what the current .sm says the banner should be
             // check for existence
             // correct name if needed
-            const supposedBgContents = fs.readdirSync(supposedBgDir + '/');
-            if (supposedBgContents.includes(supposedBnName)) {
+            if (supposedBgFolder.includes(supposedBgName)) {
               
             }
           }
