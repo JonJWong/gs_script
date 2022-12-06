@@ -60,7 +60,7 @@ try {
 
   const songFolders = [];
   const files = [];
-  const images = [];
+  let images = [];
 
   console.log('Iterating through main directory now');
   // populate songFolders array and files array
@@ -85,23 +85,30 @@ try {
   for (let fileName of files) {
     // if file is an image, check it's aspect ratio and set it to either banner or bg
     if (checkIfImage(fileName)) {
-      const currDir = dir + '/' + fileName;
       if (images.push(fileName)) console.log(`Adding ${fileName} to images`);
       // get the dimensions (requires npm install 'image-size' --save)
-      const { width, height, type } = size(currDir); // output = { height: x, width: y, type: .ext }
+      const { width, height, type } = size(dir + '/' + fileName); // output = { height: x, width: y, type: .ext }
 
       const aspectRatio = findAspectRatio(width, height);
       // if it's a banner aspect ratio, set banner variable i.e. './shitbanner.png'
       if (aspectRatio === '64:25' && !fallbackBanner) {
-        fallbackBanner = currDir;
+        fallbackBanner = fileName;
         console.log(`Set ${fallbackBanner} as fallback banner`);
         console.log('Reason: Aspect ratio matched 2.56:1 / 64:25');
         continue;
       }
 
       // catch edge cases where aspect ratio might not fit but has name designation
-      if (fileName.endsWith('bn')) fallbackBanner = currDir;
-      if (fileName.endsWith('bg')) fallbackBg = currDir;
+      if (fileName.endsWith('bn')) {
+        fallbackBanner = fileName;
+        console.log(`Set ${fallbackBanner} as fallback banner`);
+        console.log('Reason: file name ends with bn');
+      }
+      if (fileName.endsWith('bg')) {
+        fallbackBg = fileName;
+        console.log(`Set ${fallbackBg} as fallback background`);
+        console.log('Reason: file name ends with bg');
+      };
     };
   };
 
@@ -109,20 +116,33 @@ try {
   fallbackCheck = true;
 
   // if the banner is found, remove it from images array
-  if (fallbackBanner) images = images.filter(image => image !== fallbackBanner);
+  if (fallbackBanner) images = images.filter((image) => image !== fallbackBanner);
   
   // if there is no fallback background yet and images array has something, set as fallback bg
-  if (!fallbackBg && images.length) fallbackBg = images[0];
-
-} catch(error) {
-  switch(error.name) {
-    case 'ParserException':
-      console.log('There was an error parsing '+ `${error.fileName}`)
-      console.log(error.message);
-      return;
-    case 'WriterException':
-      console.log('There was an error editing ' + `${error.fileName}`)
-      console.log(error.message);
-      return;
+  if (!fallbackBg && images.length) {
+    fallbackBg = images[0];
+    console.log(`Set ${fallbackBg} as fallback background`);
+    console.log('Reason: No distinct fallback bg found, defaulting to first non-banner image');
   };
+  
+  
+  console.log('Execution finished for now');
+} catch(error) {
+  if (error.name) {
+    switch(error.name) {
+      case 'ParserException':
+        console.log('There was an error parsing '+ `${error.fileName}`)
+        console.log(error.message);
+        break;
+      case 'WriterException':
+        console.log('There was an error editing ' + `${error.fileName}`)
+        console.log(error.message);
+        break;
+      default:
+        console.log('An unspecified error has occured, halting execution');
+        break;
+    };
+  } else {
+    console.log('An unexpected error has occured, halting execution');
+  }
 };
