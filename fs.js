@@ -169,7 +169,6 @@ try {
     const contents = fs.readdirSync(rootDir + '/' + songFolder);
     for (let file of contents) {
       if (file.endsWith('.sm') || file.endsWith('.ssc')) {
-        const currDir = rootDir + '/' + songFolder;
         const fileDir = rootDir + '/' + songFolder + '/' + file;
         const fileData = iconvlite.decode(fs.readFileSync(fileDir), 'utf8').split('\n');
         console.log(`${fileDir} opened`)
@@ -201,30 +200,31 @@ try {
             
             // if the supposed directory is empty, throw error
             if (!supposedBnFolder.length) {
-              throw new ParserException(`No suitable banners found in ${supposedBnDir}`, file);
+              throw new ParserException(`${supposedBnDir} is empty, aborting.`, file);
             };
             
-            // set and declare what the current .sm says the banner should be
-            // check for existence
+            // check what the current .sm says the banner should be
             // correct name if needed
             if (supposedBnFolder.includes(supposedBnName)) {
-              console.log('Checking banner aspect ratio');
+              console.log('Banner found! Checking image aspect ratio');
 
               const { width, height } = size(supposedBnDir + '/' + supposedBnName);
-              const supposedBannerAspectRatio = findAspectRatio(width, height);
-              if (supposedBannerAspectRatio !== '64:25') throw new WriterException('Aspect ratio of banner is not 2.56:1', supposedBnDir + '/' + supposedBnName);
-
-              console.log(`${supposedBnName}'s aspect ratio is correct`)
+              const supposedBnAr = findAspectRatio(width, height);
+              if (supposedBnAr !== '64:25') {
+                console.log(`${supposedBnName} apect ratio is not 2.56:1`);
+              } else {
+                console.log(`${supposedBnName}'s aspect ratio is correct`);
+              }
             } else {
               console.log(`Banner not found! Searching for suitable replacement`);
-
               // go through the location pointed to, and check for similarity between
               // filenames
-              for (let banner of supposedBnFolder) {
-                if (compareChars(supposedBnName, banner) < 3) {
-                  if (readline.keyInYNStrict(`Do you want to use ${banner}?`)) {
-                    fileData[9] = `#BANNER:${banner};`;
-                    console.log(`Using ${banner} as banner for this file.`)
+              const smBnDir = existingBnUrl.split('/').slice(0, -1).join('/') + '/';
+              for (let bnName of supposedBnFolder) {
+                if (compareChars(supposedBnName, bnName) < 3) {
+                  if (readline.keyInYNStrict(`Do you want to use ${bnName}?`)) {
+                    fileData[9] = `#BANNER:${smBnDir + bnName};`;
+                    console.log(`Using ${bnName} as banner for ${file}`)
                     break;
                   } else {
                     continue;
@@ -257,11 +257,33 @@ try {
             console.log(`Background folder found: ${supposedBgDir}`);
             const supposedBgFolder = fs.readdirSync(supposedBgDir + '/');
 
+            // if the supposed directory is empty, throw error
+            if (!supposedBgFolder.length) {
+              throw new ParserException(`No suitable backgrounds found in ${supposedBgDir}`, file);
+            }
+
             // set and declare what the current .sm says the banner should be
             // check for existence
             // correct name if needed
             if (supposedBgFolder.includes(supposedBgName)) {
-              
+              console.log(`${file}'s designated background found`)
+            } else {
+              console.log(`Background not found! Searching for suitable replacement`);
+
+              // go through location pointed to, and check for similarity between
+              // filenames, only asking for similarly named files
+              const smBgDir = existingBgUrl.split('/').slice(0, -1).join('/') + '/';
+              for (let bgName of supposedBgFolder) {
+                if (compareChars(supposedBgName, bgName) < 3) {
+                  if (readline.keyInYNStrict(`Do you want to use ${bgName}?`)) {
+                    fileData[10] = `#BACKGROUND:${smBgDir + bgName};`;
+                    console.log(`Using ${bgName} as background for ${file}`);
+                    break;
+                  } else {
+                    continue;
+                  }
+                }
+              }
             }
           }
           
