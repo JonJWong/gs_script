@@ -228,6 +228,12 @@ try {
                   console.log(`Using ${bnName} as banner for ${file}`);
                 }
               }
+
+              // if even after checking, there is still no banner but a fallback
+              // was found, replace it with fallback
+              if (fileData[i] === '#BANNER:;' && fallbackBanner) {
+                fileData[i] = `#BANNER:../${fallbackBanner}`;
+              }
             }
           }
           if (line === '#BACKGROUND:;') {
@@ -276,7 +282,19 @@ try {
                   console.log(`Using ${bgName} as background for ${file}`);
                 }
               }
+
+              // if even after checking, there is still no banner but a fallback
+              // was found, replace it with fallback
+              if (fileData[i] === '#BACKGROUND:;' && fallbackBg) {
+                fileData[i] = `#BACKGROUND:../${fallbackBg};`;
+              }
             }
+          }
+
+          // during iteration, if the notes are reached, break
+          if (line.startsWith('//')) {
+          console.log('Finished parsing metadata');
+          break;
           }
         }
       }
