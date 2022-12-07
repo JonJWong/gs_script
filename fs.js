@@ -6,7 +6,7 @@ const readline = require('readline-sync');
 // Change this to your desired pack directory with no / at the end
 // windows: 'C:/Games/Stepmania 5/Stamina RPG 6'
 // macOSX: '/Users/jonmbp/Desktop/shit'
-const rootDir = '/Users/jonmbp/Desktop/shit';
+const rootDir = 'C:/Users/China/Desktop/testshit';
 
 // Banner aspect ratio should be 2.56:1
 // Background aspect ratios can be 4:3, 16:9, 16:10, 5:4
@@ -53,12 +53,13 @@ function checkIfImage(string) {
 };
 
 function compareChars(s1, s2) {
+  if (!s1 || !s2) return Infinity;
   const count = {};
   for (let char of s1) {
     count[char] ||= 0;
     count[char]++;
   }
-  
+
   for (let char of s2) {
     count[char]--;
   }
@@ -140,14 +141,14 @@ try {
 
   // if the banner is found, remove it from images array
   if (fallbackBanner) images = images.filter((image) => image !== fallbackBanner);
-  
+
   // if there is no fallback background yet and images array has something, set as fallback bg
   if (!fallbackBg && images.length) {
     fallbackBg = images[0];
     console.log(`Set ${fallbackBg} as fallback background`);
     console.log('Reason: No distinct fallback bg found, defaulting to first non-banner image');
   };
-  
+
   // if there is still nothing found, just set to empty string
   if (!fallbackBg || !fallbackBanner) {
     fallbackBanner ||= '';
@@ -171,10 +172,8 @@ try {
       if (file.endsWith('.sm') || file.endsWith('.ssc')) {
         const fileDir = rootDir + '/' + songFolder + '/' + file;
         const fileData = iconvlite.decode(fs.readFileSync(fileDir), 'utf8').split('\n');
-        console.log(`${fileDir} opened`)
-        // banner is always line 9 for .sm
-        // background is always line 10 for .sm
 
+        console.log(`${fileDir} opened`)
         for (let i in fileData) {
           const line = fileData[i];
           if (line === '#BANNER:;') {
@@ -183,16 +182,23 @@ try {
             console.log(`Fallback banner ${fallbackBanner} inserted`);
           } else if (line.startsWith('#BANNER:')) {
             const existingBnUrl = fileData[i].slice(8, -1);
-            const supposedBnName = existingBnUrl.slice(3);
+            const bnUrlParts = existingBnUrl.split('/');
+            let supposedBnName;
+            if (bnUrlParts.length > 1) {
+              supposedBnName = bnUrlParts[bnUrlParts.length - 1];
+            } else {
+              supposedBnName = existingBnUrl.slice(3);
+            }
             let supposedBnDir;
 
             //check banner url and trace based on how many subdirs it has
             // not sure if this is comprehensive since it just checks for '/'
             console.log('Checking existing Banner URL');
-            if (existingBnUrl.startsWith('../') && existingBnUrl.split('/'.length === 2)) {
+
+            if (existingBnUrl.startsWith('../') && bnUrlParts.length === 2) {
               supposedBnDir = rootDir;
             } else {
-              const bnParts = existingBnUrl.split('/').slice(1, -1).join('/');
+              const bnParts = bnUrlParts.slice(1, -1).join('/');
               supposedBnDir = rootDir + '/' + bnParts;
             }
 
@@ -218,41 +224,52 @@ try {
               };
             } else {
               console.log('Banner not found! Searching for suitable replacement');
+
+              let bannerChosen = false;
               // go through the location pointed to, and check for similarity between
               // filenames
-              const smBnDir = existingBnUrl.split('/').slice(0, -1).join('/') + '/';
-              for (let bnName of supposedBnFolder) {
-                if (compareChars(supposedBnName, bnName) < 3) {
-                  if (!readline.keyInYNStrict(`Do you want to use ${bnName}?`)) continue;
-                  fileData[i] = `#BANNER:${smBnDir + bnName};`;
-                  console.log(`Using ${bnName} as banner for ${file}`);
+              const smBnDir = bnUrlParts.slice(0, -1).join('/') + '/';
+              for (let bnFolderFile of supposedBnFolder) {
+                if (compareChars(supposedBnName, bnFolderFile) < 3) {
+                  if (!readline.keyInYNStrict(`Do you want to use ${bnFolderFile} for ${file}?`)) continue;
+                  fileData[i] = `#BANNER:${smBnDir + bnFolderFile};`;
+                  console.log(`Using ${bnFolderFile} as banner for ${file}`);
+                  bannerChosen = true;
+                  break;
                 }
               }
 
               // if even after checking, there is still no banner but a fallback
               // was found, replace it with fallback
-              if (fileData[i] === '#BANNER:;' && fallbackBanner) {
+              if (!bannerChosen && fallbackBanner) {
+                console.log(`No suitable banner found in supposed directory, using fallback banner instead.`)
                 fileData[i] = `#BANNER:../${fallbackBanner}`;
               }
             }
           }
-          if (line === '#BACKGROUND:;') {
+          if (line === '#BACKGROUND:;' && fallbackBg) {
             console.log('Inserting fallback background');
             fileData[i] = `#BACKGROUND:../${fallbackBg};`;
             console.log(`Fallback background ${fallbackBg} inserted`);
           } else if (line.startsWith('#BACKGROUND:')) {
             const existingBgUrl = fileData[i].slice(12, -1);
-            const supposedBgName = existingBgUrl.slice(3);
+            const bgUrlParts = existingBgUrl.split('/');
+            let supposedBgName;
+            if (bgUrlParts.length > 1) {
+              supposedBgName = bgUrlParts[bgUrlParts.length - 1];
+            } else {
+              supposedBgName = existingBgUrl.slice(3);
+            };
             let supposedBgDir;
 
             // check background url and trace based on how many subdirs it has
             // not sure if this is comprehensive since it just checks for '/'
             console.log('Checking existing Background Url');
-            if (existingBgUrl.startsWith('../') && existingBgUrl.split('/').length === 2) {
+
+            if (existingBgUrl.startsWith('../') && bgUrlParts.length === 2) {
               supposedBgDir = rootDir;
             } else {
-              // cut the initial directory up and the extension
-              const bgParts = existingBgUrl.split('/').slice(1, -1);
+              const bgParts = bgUrlParts.slice(1, -1).join('/');
               supposedBgDir = rootDir + '/' + bgParts;
             }
 
@@ -261,31 +278,35 @@ try {
 
             // if the supposed directory is empty, throw error
             if (!supposedBgFolder.length) {
-              throw new ParserException(`No suitable backgrounds found in ${supposedBgDir}`, file);
+              throw new ParserException(`${supposedBgDir} is empty, aborting.`, file);
             }
 
             // set and declare what the current file says the banner should be
             // check for existence
             // correct name if needed
             if (supposedBgFolder.includes(supposedBgName)) {
-              console.log(`${file}'s designated background found`)
+              console.log(`${file}'s designated background found, continuing.`);
             } else {
               console.log('Background not found! Searching for a suitable replacement');
 
+              let backgroundChosen = false;
               // go through location pointed to, and check for similarity between
               // filenames, only asking for similarly named files
-              const smBgDir = existingBgUrl.split('/').slice(0, -1).join('/') + '/';
-              for (let bgName of supposedBgFolder) {
-                if(compareChars(supposedBgName, bgName) < 3) {
-                  if (!readline.keyInYNStrict(`Do you want to use ${bgName}?`)) continue;
-                  fileData[i] = `#BACKGROUND:${smBgDir + bgName};`;
-                  console.log(`Using ${bgName} as background for ${file}`);
+              const smBgDir = bgUrlParts.slice(0, -1).join('/') + '/';
+              for (let bgFolderFile of supposedBgFolder) {
+                if (compareChars(supposedBgName, bgFolderFile) < 3) {
+                  if (!readline.keyInYNStrict(`Do you want to use ${bgFolderFile} for ${file}?`)) continue;
+                  fileData[i] = `#BACKGROUND:${smBgDir + bgFolderFile};`;
+                  console.log(`Using ${bgFolderFile} as background for ${file}`);
+                  backgroundChosen = true;
+                  break;
                 }
               }
 
               // if even after checking, there is still no banner but a fallback
               // was found, replace it with fallback
-              if (fileData[i] === '#BACKGROUND:;' && fallbackBg) {
+              if (!backgroundChosen && fallbackBg) {
+                console.log(`No suitable background found in supposed directory, using fallback background instead.`)
                 fileData[i] = `#BACKGROUND:../${fallbackBg};`;
               }
             }
@@ -293,20 +314,25 @@ try {
 
           // during iteration, if the notes are reached, break
           if (line.startsWith('//')) {
-          console.log('Finished parsing metadata');
-          break;
+            console.log(`Finished parsing metadata for ${file}`);
+            break
           }
         }
+
+        const saveData = fileData.join('\n');
+
+        console.log(`Saving ${file}`);
+        fs.writeFileSync(fileDir, saveData);
       }
     }
   }
 
   console.log('Execution finished for now');
-} catch(error) {
+} catch (error) {
   if (error.name) {
-    switch(error.name) {
+    switch (error.name) {
       case 'ParserException':
-        console.log('There was an error while parsing '+ `${error.fileName}`)
+        console.log('There was an error while parsing ' + `${error.fileName}`)
         console.log(error.message);
         break;
       case 'WriterException':
