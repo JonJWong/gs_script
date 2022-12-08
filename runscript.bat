@@ -1,2 +1,2 @@
-start npm install 'fs' 'image-size'
+start npm install
 start node fs.js
