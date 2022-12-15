@@ -6,7 +6,7 @@ const readline = require("readline-sync");
 // Change this to your desired pack directory with no / at the end
 // windows: 'C:/Games/Stepmania 5/Stamina RPG 6'
 // macOSX: '/Users/jonmbp/Desktop/shit'
-const rootDir = "C:/Users/China/Desktop/b24test";
+const rootDir = "C:/Users/China/Desktop/shit";
 
 // Banner aspect ratio should be 2.56:1
 // Background aspect ratios can be 4:3, 16:9, 16:10, 5:4
@@ -45,8 +45,8 @@ function checkAspectRatio(ratio) {
 }
 
 function findAndCheckAr(file) {
-  const { w, h } = size(file);
-  const ar = findAspectRatio(w, h);
+  const { width, height } = size(file);
+  const ar = findAspectRatio(width, height);
   return checkAspectRatio(ar);
 }
 
@@ -329,7 +329,7 @@ try {
             }
 
             // when all else fails, if a fallback exists, apply it
-            if (!bannerChosen && fallbackBg) {
+            if (!bgChosen && fallbackBg) {
               console.log(
                 `No suitable background found for ${fileName}, using fallback.`
               );
