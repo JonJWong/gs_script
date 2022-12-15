@@ -181,6 +181,15 @@ function getInsertSearchUrl(songFolderName, url, urlParts) {
   return [insertUrl, searchDir];
 }
 
+// i hate this
+function splitFile(data) {
+  let arr = data.split("\n");
+  if (arr[0].endsWith("\r")) {
+    arr = data.split("\r\n");
+  }
+  return arr;
+}
+
 try {
   console.log("Script starting...");
   // get all files/folders within specified directory in an array
@@ -226,13 +235,13 @@ try {
     for (let fileName of contents) {
       if (fileName.endsWith(".sm") || fileName.endsWith(".ssc")) {
         const stepFileDir = rootDir + "/" + songFolderName + "/" + fileName;
-        const fileData = iconvlite
-        .decode(fs.readFileSync(stepFileDir), "utf8")
-        .split("\n");
+        const fileData = splitFile(
+          iconvlite.decode(fs.readFileSync(stepFileDir), "utf8")
+        );
         console.log(`${fileName} opened`);
-        
-        const folderDir = rootDir + '/' + songFolderName + '/';
-        
+
+        const folderDir = rootDir + "/" + songFolderName + "/";
+
         let bannerChosen = false;
         let chosenBannerName;
         let bgChosen = false;
@@ -242,25 +251,18 @@ try {
         for (let i in fileData) {
           const currLine = fileData[i];
           if (currLine.startsWith("#BANNER:")) {
-            console.log("Looking at banner assignment");
-            const bnLineUrl = currLine.slice(8, -1);
-            const bnUrlParts = bnLineUrl.split("/");
-            const smBnName = bnUrlParts[bnUrlParts.length - 1];
-
-            const [bnInsertUrl, bnSearchDir] = getInsertSearchUrl(
-              songFolderName,
-              bnLineUrl,
-              bnUrlParts
-            );
-
             // if bannerless, check from inner folder first and set banner from inside.
-            if (currLine === '#BANNER:;') {
-              console.log(`Banner line empty, looking within songfolder.`)
+            if (currLine === "#BANNER:;") {
+              console.log(`Banner line empty, looking within songfolder.`);
               const folderFiles = fs.readdirSync(folderDir);
               for (let folderFile of folderFiles) {
+                if (!checkIfImage(folderFile)) continue;
+
                 const fileDir = folderDir + folderFile;
                 if (findAndCheckAr(fileDir)) {
-                  console.log(`Suitable banner found! Assigning ${folderFile} as banner.`)
+                  console.log(
+                    `Suitable banner found! Assigning ${folderFile} as banner.`
+                  );
                   fileData[i] = `#BANNER:${folderFile};`;
                   bannerChosen = true;
                   fileChanged = true;
@@ -271,6 +273,17 @@ try {
             }
 
             if (bannerChosen) continue;
+
+            console.log("Looking at banner assignment");
+            const bnLineUrl = currLine.slice(8, -1);
+            const bnUrlParts = bnLineUrl.split("/");
+            const smBnName = bnUrlParts[bnUrlParts.length - 1];
+
+            const [bnInsertUrl, bnSearchDir] = getInsertSearchUrl(
+              songFolderName,
+              bnLineUrl,
+              bnUrlParts
+            );
 
             const bnSearchResults = getSimilarFiles(bnSearchDir, smBnName);
             // if the .sm points to a folder that contains the file it says it does, move on
@@ -319,24 +332,18 @@ try {
           }
 
           if (currLine.startsWith("#BACKGROUND:")) {
-            const bgLineUrl = currLine.slice(12, -1);
-            const bgUrlParts = bgLineUrl.split("/");
-            const smBgName = bgUrlParts[bgUrlParts.length - 1];
-
-            const [bgInsertUrl, bgSearchDir] = getInsertSearchUrl(
-              songFolderName,
-              bgLineUrl,
-              bgUrlParts
-            );
-
             // if background line is empty, find and set background within songfolder first.
-            if (currLine === '#BACKGROUND:;') {
-              console.log(`Background line empty, looking within songfolder.`)
+            if (currLine === "#BACKGROUND:;") {
+              console.log(`Background line empty, looking within songfolder.`);
               const folderFiles = fs.readdirSync(folderDir);
               for (let folderFile of folderFiles) {
+                if (!checkIfImage(folderFile)) continue;
+
                 const fileDir = folderDir + folderFile;
                 if (!findAndCheckAr(fileDir)) {
-                  console.log(`Suitable background found! Assigning ${folderFile} as background.`)
+                  console.log(
+                    `Suitable background found! Assigning ${folderFile} as background.`
+                  );
                   fileData[i] = `#BACKGROUND:${folderFile};`;
                   bgChosen = true;
                   fileChanged = true;
@@ -346,6 +353,16 @@ try {
             }
 
             if (bgChosen) continue;
+
+            const bgLineUrl = currLine.slice(12, -1);
+            const bgUrlParts = bgLineUrl.split("/");
+            const smBgName = bgUrlParts[bgUrlParts.length - 1];
+
+            const [bgInsertUrl, bgSearchDir] = getInsertSearchUrl(
+              songFolderName,
+              bgLineUrl,
+              bgUrlParts
+            );
 
             const bgSearchResults = getSimilarFiles(bgSearchDir, smBgName);
             // if the .sm points to a folder that contains the file it says it does, move on
@@ -386,6 +403,11 @@ try {
               fileChanged = true;
             }
           }
+
+          if (currLine.startsWith("//")) {
+            console.log(`Finished parsing metadata`);
+            break;
+          }
         }
 
         if (fileChanged) {
@@ -395,7 +417,7 @@ try {
           console.log(`Saving ${fileName}`);
           fs.writeFileSync(stepFileDir, saveData);
         } else {
-          console.log(`No changes were made to ${fileName}`)
+          console.log(`No changes were made to ${fileName}`);
         }
       }
     }
