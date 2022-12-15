@@ -227,10 +227,12 @@ try {
       if (fileName.endsWith(".sm") || fileName.endsWith(".ssc")) {
         const stepFileDir = rootDir + "/" + songFolderName + "/" + fileName;
         const fileData = iconvlite
-          .decode(fs.readFileSync(stepFileDir), "utf8")
-          .split("\n");
+        .decode(fs.readFileSync(stepFileDir), "utf8")
+        .split("\n");
         console.log(`${fileName} opened`);
-
+        
+        const folderDir = rootDir + '/' + songFolderName + '/';
+        
         let bannerChosen = false;
         let chosenBannerName;
         let bgChosen = false;
@@ -254,7 +256,6 @@ try {
             // if bannerless, check from inner folder first and set banner from inside.
             if (currLine === '#BANNER:;') {
               console.log(`Banner line empty, looking within songfolder.`)
-              const folderDir = rootDir + '/' + songFolderName + '/';
               const folderFiles = fs.readdirSync(folderDir);
               for (let folderFile of folderFiles) {
                 const fileDir = folderDir + folderFile;
@@ -331,7 +332,6 @@ try {
             // if background line is empty, find and set background within songfolder first.
             if (currLine === '#BACKGROUND:;') {
               console.log(`Background line empty, looking within songfolder.`)
-              const folderDir = rootDir + '/' + songFolderName + '/';
               const folderFiles = fs.readdirSync(folderDir);
               for (let folderFile of folderFiles) {
                 const fileDir = folderDir + folderFile;
@@ -368,7 +368,7 @@ try {
                       `Do you want to use ${searchResult} as the background for ${fileName}?`
                     )
                   ) {
-                    fileData[i] = `#BANNER:${bgInsertUrl + searchResult};`;
+                    fileData[i] = `#BACKGROUND:${bgInsertUrl + searchResult};`;
                     bgChosen = true;
                     fileChanged = true;
                     break;
