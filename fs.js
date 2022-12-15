@@ -339,7 +339,7 @@ try {
         }
         // const saveData = fileData.join('\n');
 
-        // console.log(`Saving ${file}`);
+        // console.log(`Saving ${fileName}`);
         // fs.writeFileSync(fileDir, saveData);
       }
     }
@@ -350,11 +350,11 @@ try {
   if (error.name) {
     switch (error.name) {
       case "ParserException":
-        console.log("There was an error while parsing " + `${error.fileName}`);
+        console.log(`There was an error while parsing ${error.fileName}`);
         console.log(error.message);
         break;
       case "WriterException":
-        console.log("There was an error while editing " + `${error.fileName}`);
+        console.log(`There was an error while writing to ${error.fileName}`);
         console.log(error.message);
         break;
       default:
@@ -363,6 +363,6 @@ try {
     }
   } else {
     console.log("An unexpected error has occured, halting execution");
-    console.log(error);
+    console.log(`error: ${error}`);
   }
 }
