@@ -6,7 +6,7 @@ const readline = require("readline-sync");
 // Change this to your desired pack directory with no / at the end
 // windows: 'C:/Games/Stepmania 5/Stamina RPG 6'
 // macOSX: '/Users/jonmbp/Desktop/shit'
-const rootDir = "C:/Users/China/Desktop/shit";
+const rootDir = "C:/Users/China/Desktop/b2";
 
 // Banner aspect ratio should be 2.56:1
 // Background aspect ratios can be 4:3, 16:9, 16:10, 5:4
@@ -104,7 +104,7 @@ function getSongFoldersFiles(songFolderItems) {
   return { songFolders, files };
 }
 
-function getImages(files) {
+function getFallbackImages(files) {
   const images = [];
   let fallbackBanner;
   let fallbackBg;
@@ -159,7 +159,7 @@ function getSimilarFiles(dir, target) {
   return similarFiles;
 }
 
-function getSearchInsertUrls(songFolderName, url, urlParts) {
+function getInsertSearchUrl(songFolderName, url, urlParts) {
   let insertUrl;
   let searchDir;
 
@@ -193,7 +193,7 @@ try {
   console.log("Finished iterating through main directory");
   // look through the files for images, for fallback banner and bg
   // while sorting out all the extraneous files
-  let { images, fallbackBanner, fallbackBg } = getImages(files);
+  let { images, fallbackBanner, fallbackBg } = getFallbackImages(files);
 
   console.log("Successfully checked for fallback banner and background");
 
@@ -232,6 +232,7 @@ try {
         console.log(`${fileName} opened`);
 
         let bannerChosen = false;
+        let chosenBannerName;
         let bgChosen = false;
         let fileChanged = false;
         // find and navigate first, then check if proper. if proper, continue to check for bg
@@ -244,15 +245,34 @@ try {
             const bnUrlParts = bnLineUrl.split("/");
             const smBnName = bnUrlParts[bnUrlParts.length - 1];
 
-            const [bnInsertUrl, bnSearchDir] = getSearchInsertUrls(
+            const [bnInsertUrl, bnSearchDir] = getInsertSearchUrl(
               songFolderName,
               bnLineUrl,
               bnUrlParts
             );
 
+            // if bannerless, check from inner folder first and set banner from inside.
+            if (currLine === '#BANNER:;') {
+              const folderDir = rootDir + '/' + songFolderName + '/';
+              const folderFiles = fs.readdirSync(folderDir);
+              for (let folderFile of folderFiles) {
+                const fileDir = folderDir + folderFile;
+                if (findAndCheckAr(fileDir)) {
+                  fileData[i] = `#BANNER:${folderFile};`;
+                  bannerChosen = true;
+                  fileChanged = true;
+                  chosenBannerName = folderFile;
+                  break;
+                }
+              }
+            }
+
+            if (bannerChosen) continue;
+
             const bnSearchResults = getSimilarFiles(bnSearchDir, smBnName);
             // if the .sm points to a folder that contains the file it says it does, move on
             // set flag so fallback is not assigned to this file
+
             if (bnSearchResults.includes(smBnName)) {
               console.log(
                 `Banner for ${fileName} is where specified in .sm/.ssc, checking aspect ratio.`
@@ -268,17 +288,19 @@ try {
 
             // now that we've checked through the specified destination and not found anything
             // we can check for similar files.
-            for (let searchResult of bnSearchResults) {
-              if (compareChars(searchResult, smBnName) < 3) {
-                if (
-                  readline.keyInYNStrict(
-                    `Do you want to use ${searchResult} as the banner for ${fileName}?`
-                  )
-                ) {
-                  fileData[i] = `#BANNER:${bnInsertUrl + searchResult};`;
-                  bannerChosen = true;
-                  fileChanged = true;
-                  break;
+            if (!bannerChosen) {
+              for (let searchResult of bnSearchResults) {
+                if (compareChars(searchResult, smBnName) < 3) {
+                  if (
+                    readline.keyInYNStrict(
+                      `Do you want to use ${searchResult} as the banner for ${fileName}?`
+                    )
+                  ) {
+                    fileData[i] = `#BANNER:${bnInsertUrl + searchResult};`;
+                    bannerChosen = true;
+                    fileChanged = true;
+                    break;
+                  }
                 }
               }
             }
@@ -298,11 +320,28 @@ try {
             const bgUrlParts = bgLineUrl.split("/");
             const smBgName = bgUrlParts[bgUrlParts.length - 1];
 
-            const [bgInsertUrl, bgSearchDir] = getSearchInsertUrls(
+            const [bgInsertUrl, bgSearchDir] = getInsertSearchUrl(
               songFolderName,
               bgLineUrl,
               bgUrlParts
             );
+
+            // if background line is empty, find and set background within songfolder first.
+            if (currLine === '#BACKGROUND:;') {
+              const folderDir = rootDir + '/' + songFolderName + '/';
+              const folderFiles = fs.readdirSync(folderDir);
+              for (let folderFile of folderFiles) {
+                const fileDir = folderDir + folderFile;
+                if (!findAndCheckAr(fileDir)) {
+                  fileData[i] = `#BACKGROUND:${folderFile};`;
+                  bgChosen = true;
+                  fileChanged = true;
+                  break;
+                }
+              }
+            }
+
+            if (bgChosen) continue;
 
             const bgSearchResults = getSimilarFiles(bgSearchDir, smBgName);
             // if the .sm points to a folder that contains the file it says it does, move on
@@ -317,17 +356,19 @@ try {
 
             // now that we've checked through the specified destination and not found anything
             // we can check for similar files.
-            for (let searchResult of bgSearchResults) {
-              if (compareChars(searchResult, smBgName) < 3) {
-                if (
-                  readline.keyInYNStrict(
-                    `Do you want to use ${searchResult} as the background for ${fileName}?`
-                  )
-                ) {
-                  fileData[i] = `#BANNER:${bgInsertUrl + searchResult};`;
-                  bgChosen = true;
-                  fileChanged = true;
-                  break;
+            if (!bgChosen) {
+              for (let searchResult of bgSearchResults) {
+                if (compareChars(searchResult, smBgName) < 3) {
+                  if (
+                    readline.keyInYNStrict(
+                      `Do you want to use ${searchResult} as the background for ${fileName}?`
+                    )
+                  ) {
+                    fileData[i] = `#BANNER:${bgInsertUrl + searchResult};`;
+                    bgChosen = true;
+                    fileChanged = true;
+                    break;
+                  }
                 }
               }
             }
