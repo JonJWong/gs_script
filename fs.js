@@ -252,23 +252,21 @@ try {
           const currLine = fileData[i];
           if (currLine.startsWith("#BANNER:")) {
             // if bannerless, check from inner folder first and set banner from inside.
-            if (currLine === "#BANNER:;") {
-              console.log(`Banner line empty, looking within songfolder.`);
-              const folderFiles = fs.readdirSync(folderDir);
-              for (let folderFile of folderFiles) {
-                if (!checkIfImage(folderFile)) continue;
+            console.log(`Looking within songfolder for banner`);
+            const folderFiles = fs.readdirSync(folderDir);
+            for (let folderFile of folderFiles) {
+              if (!checkIfImage(folderFile)) continue;
 
-                const fileDir = folderDir + folderFile;
-                if (findAndCheckAr(fileDir)) {
-                  console.log(
-                    `Suitable banner found! Assigning ${folderFile} as banner.`
-                  );
-                  fileData[i] = `#BANNER:${folderFile};`;
-                  bannerChosen = true;
-                  fileChanged = true;
-                  chosenBannerName = folderFile;
-                  break;
-                }
+              const fileDir = folderDir + folderFile;
+              if (findAndCheckAr(fileDir)) {
+                console.log(
+                  `Suitable banner found! Assigning ${folderFile} as banner.`
+                );
+                fileData[i] = `#BANNER:${folderFile};`;
+                bannerChosen = true;
+                fileChanged = true;
+                chosenBannerName = folderFile;
+                break;
               }
             }
 
@@ -333,22 +331,20 @@ try {
 
           if (currLine.startsWith("#BACKGROUND:")) {
             // if background line is empty, find and set background within songfolder first.
-            if (currLine === "#BACKGROUND:;") {
-              console.log(`Background line empty, looking within songfolder.`);
-              const folderFiles = fs.readdirSync(folderDir);
-              for (let folderFile of folderFiles) {
-                if (!checkIfImage(folderFile)) continue;
+            console.log(`Looking within songfolder for background`);
+            const folderFiles = fs.readdirSync(folderDir);
+            for (let folderFile of folderFiles) {
+              if (!checkIfImage(folderFile)) continue;
 
-                const fileDir = folderDir + folderFile;
-                if (!findAndCheckAr(fileDir)) {
-                  console.log(
-                    `Suitable background found! Assigning ${folderFile} as background.`
-                  );
-                  fileData[i] = `#BACKGROUND:${folderFile};`;
-                  bgChosen = true;
-                  fileChanged = true;
-                  break;
-                }
+              const fileDir = folderDir + folderFile;
+              if (!findAndCheckAr(fileDir)) {
+                console.log(
+                  `Suitable background found! Assigning ${folderFile} as background.`
+                );
+                fileData[i] = `#BACKGROUND:${folderFile};`;
+                bgChosen = true;
+                fileChanged = true;
+                break;
               }
             }
 
