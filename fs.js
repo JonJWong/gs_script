@@ -228,17 +228,18 @@ try {
         const stepFileDir = rootDir + "/" + songFolderName + "/" + fileName;
         const fileData = iconvlite
           .decode(fs.readFileSync(stepFileDir), "utf8")
-          .split("\r\n");
-
-        console.log(`${stepFileDir} opened`);
+          .split("\n");
+        console.log(`${fileName} opened`);
 
         let bannerChosen = false;
         let bgChosen = false;
+        let fileChanged = false;
         // find and navigate first, then check if proper. if proper, continue to check for bg
         // if not proper, set fallback
         for (let i in fileData) {
           const currLine = fileData[i];
           if (currLine.startsWith("#BANNER:")) {
+            console.log("Looking at banner assignment");
             const bnLineUrl = currLine.slice(8, -1);
             const bnUrlParts = bnLineUrl.split("/");
             const smBnName = bnUrlParts[bnUrlParts.length - 1];
@@ -276,6 +277,7 @@ try {
                 ) {
                   fileData[i] = `#BANNER:${bnInsertUrl + searchResult};`;
                   bannerChosen = true;
+                  fileChanged = true;
                   break;
                 }
               }
@@ -287,6 +289,7 @@ try {
                 `No suitable banner found for ${fileName}, using fallback.`
               );
               fileData[i] = `#BANNER:../${fallbackBanner};`;
+              fileChanged = true;
             }
           }
 
@@ -323,6 +326,7 @@ try {
                 ) {
                   fileData[i] = `#BANNER:${bgInsertUrl + searchResult};`;
                   bgChosen = true;
+                  fileChanged = true;
                   break;
                 }
               }
@@ -334,13 +338,20 @@ try {
                 `No suitable background found for ${fileName}, using fallback.`
               );
               fileData[i] = `#BACKGROUND:../${fallbackBg};`;
+              fileChanged = true;
             }
           }
         }
-        // const saveData = fileData.join('\n');
 
-        // console.log(`Saving ${fileName}`);
-        // fs.writeFileSync(fileDir, saveData);
+        if (fileChanged) {
+          console.log(`Changes were made to ${fileName}, saving...`);
+          const saveData = fileData.join("\n");
+
+          console.log(`Saving ${fileName}`);
+          fs.writeFileSync(stepFileDir, saveData);
+        } else {
+          console.log(`No changes were made to ${fileName}`)
+        }
       }
     }
   }
@@ -359,6 +370,7 @@ try {
         break;
       default:
         console.log("An unspecified error has occured, halting execution");
+        console.log(`error: ${error}`);
         break;
     }
   } else {
