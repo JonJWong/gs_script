@@ -49,6 +49,10 @@ function checkAspectRatio(ratio) {
   return val < .2
 };
 
+function findAndCheckAr(file) {
+  const { w, h } = size(file);
+}
+
 function checkIfImage(string) {
   for (let extension of IMAGE_FILENAME_EXTENSIONS) {
     if (string.endsWith(extension)) {
@@ -203,20 +207,69 @@ try {
 
         console.log(`${stepFileDir} opened`);
 
+        let bannerChosen = false;
+        let bgChosen = false;
         // find and navigate first, then check if proper. if proper, continue to check for bg
         // if not proper, set fallback
         for (let i in fileData) {
           const currLine = fileData[i];
           if (currLine.startsWith('#BANNER:')) {
-            const bannerLineUrl = currLine.slice(8, -1);
-            if (bannerLineUrl) {
-              const lineUrlParts = bannerLineUrl.split('/');
+            const bannerLineUrl = currLine.slice(8, -1); // ../assets/banner.png
+            const bannerUrlParts = bannerLineUrl.split('/'); // ['..', 'assets', 'banner.png']
+            const smBannerName = bannerUrlParts[bannerUrlParts.length - 1]; // ['banner.png']
+            let bannerSearchDir;
 
+            // start at the root of folder and build from here
+            let insertUrl;
+
+            if (bannerUrlParts.length === 1) {
+              // banner is in songfolder
+              bannerSearchDir = rootDir + '/' + songFolderName + '/';
+              insertUrl = '';
+            } else if (bannerLineUrl.startsWith('../') && bannerUrlParts.length === 2) {
+              // banner is in root folder (up 1 level from songfolder)
+              bannerSearchDir = rootDir;
+              insertUrl = '../';
             } else {
+              // banner is elsewhere
+              bannerSearchDir = rootDir + '/' + bannerUrlParts.slice(1, -1).join('/');
+              insertUrl = bannerUrlParts.slice(0, -1).join('/') + '/'; // theoretically
+              // this should be like '../assets/
+            };
 
-            }
-          }
-        }
+            const searchResultsFolder = getSimilarFiles(bannerSearchDir, smBannerName);
+            // if the .sm points to a folder that contains the file it says it does, move on
+            // set flag so fallback is not assigned to this file
+            if (searchResultsFolder.includes(smBannerName)) {
+              console.log(`Banner for ${fileName} is where specified in .sm/.ssc, checking aspect ratio.`)
+              const { width, height } = size(bannerSearchDir + '/' + smBannerName);
+              const smBannerAr = findAspectRatio(width, height);
+              if (!checkAspectRatio(smBannerAr)) console.log(`Aspect ratio incorrect.`);
+              console.log(`Aspect ratio correct, continuing.`);
+              bannerChosen = true;
+              continue;
+            };
+
+            // now that we've checked through the specified destination and not found anything
+            // we can check for similar files.
+            for (let searchResult of searchResultsFolder) {
+              if (compareChars(searchResult, smBannerName) < 3) {
+                if (!readline.keyInYNStrict(`Do you want to use ${searchResult} as the banner for ${fileName}?`)) {
+                  continue;
+                };
+                fileData[i] = `#BANNER:${insertUrl + searchResult};`;
+                bannerChosen = true;
+                break;
+              };
+            };
+
+            // when all else fails, if a fallback exists, apply it
+            if (!bannerChosen && fallbackBanner) {
+              console.log(`No suitable banner found for ${fileName}, using fallback.`);
+              fileData[i] = `#BANNER:../${fallbackBanner};`;
+            };
+          };
+        };
         // const saveData = fileData.join('\n');
 
         // console.log(`Saving ${file}`);
