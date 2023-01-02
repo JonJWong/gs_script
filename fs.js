@@ -72,7 +72,7 @@ function checkAspectRatio(ratio) {
   image filename extensions constant */
 function checkIfImage(string) {
   for (let extension of IMAGE_FILENAME_EXTENSIONS) {
-    if (string.endsWith(extension)) {
+    if (string.toLowerCase().endsWith(extension)) {
       return true;
     }
   }
@@ -324,7 +324,7 @@ try {
           const currLine = fileData[i];
           if (currLine.startsWith("#BANNER:")) {
             // If bannerless, check and prioritize images within songfolder.
-            console.log(`Looking within songfolder for banner.`);
+            console.log(`Looking within song folder for banner.`);
             const folderFiles = fs.readdirSync(folderDir);
             for (let folderFile of folderFiles) {
               if (!checkIfImage(folderFile)) continue;
