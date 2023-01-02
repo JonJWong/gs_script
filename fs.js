@@ -6,7 +6,17 @@ const readline = require("readline-sync");
 /* Change this to your desired pack directory with no / at the end
 Windows: 'C:/Games/Stepmania 5/Stamina RPG 6'
 macOSX: '/Users/jonmbp/Desktop/shit' */
-const rootDir = "C:/Users/China/Desktop/b2";
+// const rootDir = "C:/Users/China/Desktop/shit";
+let rootDir;
+let dirSelected = false;
+while (!dirSelected) {
+  rootDir = readline.question('Please enter the songfolder directory. (ex. C:/Users/user123/Desktop/songfolder) \n');
+  rootDir = rootDir.split("\\").join("/");
+
+  if (readline.keyInYNStrict(`Is ${rootDir} the correct directory?`)) {
+    dirSelected = true;
+  };
+};
 
 /* Background aspect ratios can be 4:3, 16:9, 16:10, 5:4 but for now we're not
   checking those */
@@ -145,10 +155,10 @@ function getSongFoldersFiles(songFolderItems) {
     /* If current file is a directory (a song folder), add it to the array.
       If it is not a directory, it is either an image or file within the folder. */
     if (fs.statSync(path).isDirectory()) {
-      console.log(`Adding ${songFolderItems[i]} to songFolders`);
+      console.log(`Adding ${songFolderItems[i]} to songFolders.`);
       songFolders.push(songFolderItems[i]);
     } else {
-      console.log(`Adding ${songFolderItems[i]} to files`);
+      console.log(`Adding ${songFolderItems[i]} to files.`);
       files.push(songFolderItems[i]);
     }
   }
@@ -169,14 +179,14 @@ function getFallbackImages(files) {
       a banner (if the aspect ratio is correct), or a background */
     if (checkIfImage(fileName)) {
       if (images.push(fileName)) {
-        console.log(`Adding ${fileName} to images`);
+        console.log(`Adding ${fileName} to images.`);
       }
 
       /* If the file has the aspect ratio of a banner, and fallbackBanner
         has not been set, set fallbackBanner to the current file */
       if (findAndCheckAr(rootDir + "/" + fileName) && !fallbackBanner) {
         fallbackBanner = fileName;
-        console.log(`Set ${fallbackBanner} as fallback banner`);
+        console.log(`Set ${fallbackBanner} as fallback banner.`);
         console.log(
           `Reason: Aspect ratio matched ${DESIRED_BANNER_ASPECT_RATIO}`
         );
@@ -186,14 +196,14 @@ function getFallbackImages(files) {
       // Catch edge cases where files are designated by name
       if (fileName.endsWith("bn") || fileName.endsWith("banner")) {
         fallbackBanner = fileName;
-        console.log(`Set ${fallbackBanner} as fallback banner`);
-        console.log("Reason: file name ends with bn/banner");
+        console.log(`Set ${fallbackBanner} as fallback banner.`);
+        console.log("Reason: file name ends with bn/banner.");
       }
 
       if (fileName.endsWith("bg") || fileName.endsWith("background")) {
         fallbackBg = fileName;
-        console.log(`Set ${fallbackBg} as fallback background`);
-        console.log("Reason: file name ends with bg/background");
+        console.log(`Set ${fallbackBg} as fallback background.`);
+        console.log("Reason: file name ends with bg/background.");
       }
     }
   }
@@ -251,20 +261,20 @@ function getInsertSearchUrl(songFolderName, url, urlParts) {
 //------------------------------------------------------------------------------
 
 try {
-  console.log("Script starting...");
+  console.log(`Script starting in ${rootDir}...`);
   // Get all files/folders within specified directory in an array
   let songFolderItems = fs.readdirSync(rootDir);
 
-  console.log("Iterating through main directory now");
+  console.log("Iterating through main directory.");
   // Populate songFolders array and files array
   const { songFolders, files } = getSongFoldersFiles(songFolderItems);
 
-  console.log("Finished iterating through main directory");
+  console.log("Finished iterating through main directory.");
   /* Look through the files for images, for fallback banner and bg
   while sorting out all the extraneous files */
   let { images, fallbackBanner, fallbackBg } = getFallbackImages(files);
 
-  console.log("Successfully checked for fallback banner and background");
+  console.log("Successfully checked for fallback banner and background.");
 
   // If the banner is found, remove it from the images array
   if (fallbackBanner) {
@@ -275,9 +285,9 @@ try {
     set the first element as the fallbackBg */
   if (!fallbackBg && images.length) {
     fallbackBg = images[0];
-    console.log(`Set ${fallbackBg} as fallback background`);
+    console.log(`Set ${fallbackBg} as fallback background.`);
     console.log(
-      "Reason: No distinct fallback bg found, defaulting to first non-banner image"
+      "Reason: No distinct fallback bg found, defaulting to first non-banner image."
     );
   }
 
@@ -285,9 +295,9 @@ try {
   fallbackBanner ||= "";
   fallbackBg ||= "";
 
-  console.log("Finished searching for fallback banner and background");
+  console.log("Finished searching for fallback banner and background.");
 
-  console.log("Beginning song folder iteration");
+  console.log("Beginning song folder iteration.");
   /* Iterate through song folders one by one, look at the .sm and cross reference
     their desired banner URL to see if it exists or not.
     If it does not exist, assign fallbacks if those exist. */
@@ -299,7 +309,7 @@ try {
         const fileData = splitFile(
           iconvlite.decode(fs.readFileSync(stepFileDir), "utf8")
         );
-        console.log(`${fileName} opened`);
+        console.log(`${fileName} opened.`);
 
         const folderDir = rootDir + "/" + songFolderName + "/";
 
@@ -314,7 +324,7 @@ try {
           const currLine = fileData[i];
           if (currLine.startsWith("#BANNER:")) {
             // If bannerless, check and prioritize images within songfolder.
-            console.log(`Looking within songfolder for banner`);
+            console.log(`Looking within songfolder for banner.`);
             const folderFiles = fs.readdirSync(folderDir);
             for (let folderFile of folderFiles) {
               if (!checkIfImage(folderFile)) continue;
@@ -335,7 +345,7 @@ try {
             if (bannerChosen) continue;
 
             // If there is a banner assigned already, follow the URL.
-            console.log("Looking at banner assignment");
+            console.log("Looking at banner assignment.");
             const bnLineUrl = currLine.slice(8, -1);
             const bnUrlParts = bnLineUrl.split("/");
             const smBnName = bnUrlParts[bnUrlParts.length - 1];
@@ -390,7 +400,7 @@ try {
 
           if (currLine.startsWith("#BACKGROUND:")) {
             // If backgroundless, check and prioritize images within songfolder.
-            console.log(`Looking within songfolder for background`);
+            console.log(`Looking within songfolder for background.`);
             const folderFiles = fs.readdirSync(folderDir);
             for (let folderFile of folderFiles) {
               if (!checkIfImage(folderFile)) continue;
@@ -410,7 +420,7 @@ try {
             if (bgChosen) continue;
 
             // If there is a background assigned already, follow the URL.
-            console.log("Looking at background assignment");
+            console.log("Looking at background assignment.");
             const bgLineUrl = currLine.slice(12, -1);
             const bgUrlParts = bgLineUrl.split("/");
             const smBgName = bgUrlParts[bgUrlParts.length - 1];
@@ -461,7 +471,7 @@ try {
           }
 
           if (currLine.startsWith("//")) {
-            console.log(`Finished parsing metadata`);
+            console.log(`Finished parsing metadata.`);
             break;
           }
         }
@@ -487,12 +497,12 @@ try {
         console.log(error.message);
         break;
       default:
-        console.log("An unspecified error has occured, halting execution");
+        console.log("An unspecified error has occured, halting execution.");
         console.log(`error: ${error}`);
         break;
     }
   } else {
-    console.log("An unexpected error has occured, halting execution");
+    console.log("An unexpected error has occured, halting execution.");
     console.log(`error: ${error}`);
   }
 }
