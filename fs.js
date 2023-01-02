@@ -373,7 +373,7 @@ try {
               haven't found anything, we can check for similar files. */
             if (!bannerChosen) {
               for (let searchResult of bnSearchResults) {
-                if (compareChars(searchResult, smBnName) < 3) {
+                if (checkIfImage(searchResult) && compareChars(searchResult, smBnName) < 3) {
                   if (
                     readline.keyInYNStrict(
                       `Do you want to use ${searchResult} as the banner for ${fileName}?`
@@ -445,7 +445,7 @@ try {
               haven't found anything, we can check for similar files. */
             if (!bgChosen) {
               for (let searchResult of bgSearchResults) {
-                if (compareChars(searchResult, smBgName) < 3) {
+                if (checkIfImage(searchResult) && compareChars(searchResult, smBgName) < 3) {
                   if (
                     readline.keyInYNStrict(
                       `Do you want to use ${searchResult} as the background for ${fileName}?`
