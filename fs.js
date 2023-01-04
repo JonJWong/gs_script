@@ -89,16 +89,19 @@ function findAndCheckAr(file) {
 }
 
 // compares two strings, returning the number of different characters between them.
+// forces lowercase checking
 function compareChars(string1, string2) {
   if (!string1 || !string2) return Infinity;
   const count = {};
+  const lowerStr1 = string1.toLowerCase();
+  const lowerStr2 = string2.toLowerCase();
 
-  for (let char of string1) {
+  for (let char of lowerStr1) {
     count[char] ||= 0;
     count[char]++;
   }
 
-  for (let char of string2) {
+  for (let char of lowerStr2) {
     count[char]--;
   }
 
