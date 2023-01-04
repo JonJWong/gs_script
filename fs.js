@@ -2,6 +2,7 @@ const fs = require("fs");
 const size = require("image-size");
 const iconvlite = require("iconv-lite");
 const readline = require("readline-sync");
+const getVideoDimensions = require("get-video-dimensions");
 
 /* Change this to your desired pack directory with no / at the end
 Windows: 'C:/Games/Stepmania 5/Stamina RPG 6'
@@ -81,10 +82,18 @@ function checkIfImage(string) {
 
 /* Accepts a URL, and uses image-size to get the dimensions of an image file.
   returns false if file is not an image for redundancy. */
-function findAndCheckAr(file) {
+async function findAndCheckAr(file) {
   if (!checkIfImage(file)) return false;
-  const { width, height } = size(file);
-  const ar = findAspectRatio(width, height);
+
+  let ar;
+
+  if (file.endsWith(".mp4")) {
+    const { width, height } = await getVideoDimensions(file);
+    ar = findAspectRatio(width, height);
+  } else {
+    const { width, height } = size(file);
+    ar = findAspectRatio(width, height);
+  }
   return checkAspectRatio(ar);
 }
 
